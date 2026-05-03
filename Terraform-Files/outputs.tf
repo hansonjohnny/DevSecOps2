@@ -27,3 +27,13 @@ output "jenkins_ssh" {
   description = "SSH command to connect to Jenkins server"
   value       = "ssh -i <your-key>.pem ec2-user@${aws_instance.jenkins.public_ip}"
 }
+
+output "ecr_backend_url" {
+  description = "ECR backend repository URL — used to push and pull images"
+  value       = aws_ecr_repository.backend.repository_url
+}
+
+output "ecr_frontend_url" {
+  description = "ECR frontend repository URL — used to push and pull images"
+  value       = aws_ecr_repository.frontend.repository_url
+}
