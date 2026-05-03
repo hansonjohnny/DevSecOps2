@@ -31,7 +31,7 @@ variable "node_instance_type" {
 variable "jenkins_instance_type" {
   description = "EC2 instance type for Jenkins server"
   type        = string
-  default     = "c7i-flex.large"
+  default     = "m7i-flex.large"
 }
 
 variable "jenkins_ssh_cidr" {

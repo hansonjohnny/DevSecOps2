@@ -29,3 +29,13 @@ resource "aws_instance" "jenkins" {
     Environment = var.environment
   }
 }
+
+resource "aws_eip" "jenkins" {
+  instance = aws_instance.jenkins.id
+  domain   = "vpc"
+
+  tags = {
+    Name        = "${var.project_name}-jenkins-eip"
+    Environment = var.environment
+  }
+}
