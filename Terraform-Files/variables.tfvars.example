@@ -1,0 +1,28 @@
+# ─────────────────────────────────────────
+# TERRAFORM VARIABLE VALUES — EXAMPLE
+# copy this file to terraform.tfvars
+# and fill in your actual values
+#
+# cp terraform.tfvars.example terraform.tfvars
+# ─────────────────────────────────────────
+
+# ── Project ───────────────────────────────
+project_name = "todo-app"
+environment  = "dev"
+
+# ── AWS ───────────────────────────────────
+aws_region = "us-east-2"
+
+# ── EKS ───────────────────────────────────
+eks_version        = "1.32"
+node_instance_type = "t3.small"
+
+# ── Jenkins EC2 ───────────────────────────
+jenkins_instance_type = "c7i-flex.large"
+
+# restrict to your IP: https://checkip.amazonaws.com
+jenkins_ssh_cidr = "x.x.x.x/32"
+
+# generate: ssh-keygen -t rsa -b 4096 -f ~/.ssh/jenkins-key
+# then:     cat ~/.ssh/jenkins-key.pub
+jenkins_public_key = ""

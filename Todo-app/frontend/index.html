@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Todo App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 3rem 1rem;
+    }
+
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 2rem;
+      width: 100%;
+      max-width: 540px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .input-row input:focus { border-color: #4f46e5; }
+
+    .input-row button {
+      padding: 10px 18px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .input-row button:hover { background: #3730a3; }
+
+    .filters {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1.2rem;
+    }
+
+    .filter-btn {
+      padding: 5px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 20px;
+      background: transparent;
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: #555;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: #fff;
+    }
+
+    .todo-list { list-style: none; }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 10px;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
+      border-radius: 6px;
+    }
+
+    .todo-item:hover { background: #fafafa; }
+
+    .todo-item input[type="checkbox"] {
+      width: 18px; height: 18px;
+      accent-color: #4f46e5;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .todo-title {
+      flex: 1;
+      font-size: 0.95rem;
+      color: #333;
+    }
+
+    .todo-title.done {
+      text-decoration: line-through;
+      color: #aaa;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+
+    .delete-btn:hover { color: #ef4444; }
+
+    .empty {
+      text-align: center;
+      color: #bbb;
+      font-size: 0.9rem;
+      padding: 2rem 0;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1.2rem;
+      font-size: 0.82rem;
+      color: #999;
+    }
+
+    .error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>My Todos</h1>
+  <p class="subtitle">Backed by PostgreSQL &amp; Redis</p>
+
+  <div class="error" id="error"></div>
+
+  <div class="input-row">
+    <input type="text" id="new-todo" placeholder="Add a new task..." />
+    <button onclick="addTodo()">Add</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('active', this)">Active</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">Done</button>
+  </div>
+
+  <ul class="todo-list" id="todo-list"></ul>
+  <div class="empty" id="empty" style="display:none">No todos here.</div>
+
+  <div class="stats">
+    <span id="total-count">0 tasks</span>
+    <span id="done-count">0 completed</span>
+  </div>
+</div>
+
+<script>
+  const API = window.API_BASE || "";
+  let todos = [];
+  let filter = "all";
+
+  async function fetchTodos() {
+    try {
+      const res = await fetch(`${API}/api/todos`);
+      todos = await res.json();
+      render();
+    } catch (e) {
+      showError("Could not connect to backend.");
+    }
+  }
+
+  async function addTodo() {
+    const input = document.getElementById("new-todo");
+    const title = input.value.trim();
+    if (!title) return;
+    try {
+      const res = await fetch(`${API}/api/todos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title })
+      });
+      const todo = await res.json();
+      todos.unshift(todo);
+      input.value = "";
+      render();
+    } catch (e) {
+      showError("Failed to add todo.");
+    }
+  }
+
+  async function toggleTodo(id, completed) {
+    try {
+      const res = await fetch(`${API}/api/todos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed })
+      });
+      const updated = await res.json();
+      todos = todos.map(t => t.id === id ? updated : t);
+      render();
+    } catch (e) {
+      showError("Failed to update todo.");
+    }
+  }
+
+  async function deleteTodo(id) {
+    try {
+      await fetch(`${API}/api/todos/${id}`, { method: "DELETE" });
+      todos = todos.filter(t => t.id !== id);
+      render();
+    } catch (e) {
+      showError("Failed to delete todo.");
+    }
+  }
+
+  function setFilter(f, btn) {
+    filter = f;
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    render();
+  }
+
+  function render() {
+    const list = document.getElementById("todo-list");
+    const empty = document.getElementById("empty");
+    let visible = todos;
+    if (filter === "active") visible = todos.filter(t => !t.completed);
+    if (filter === "done")   visible = todos.filter(t => t.completed);
+
+    list.innerHTML = "";
+    if (visible.length === 0) {
+      empty.style.display = "block";
+    } else {
+      empty.style.display = "none";
+      visible.forEach(todo => {
+        const li = document.createElement("li");
+        li.className = "todo-item";
+        li.innerHTML = `
+          <input type="checkbox" ${todo.completed ? "checked" : ""}
+            onchange="toggleTodo(${todo.id}, this.checked)" />
+          <span class="todo-title ${todo.completed ? 'done' : ''}">${escHtml(todo.title)}</span>
+          <button class="delete-btn" onclick="deleteTodo(${todo.id})">&#x2715;</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    const done = todos.filter(t => t.completed).length;
+    document.getElementById("total-count").textContent = `${todos.length} task${todos.length !== 1 ? "s" : ""}`;
+    document.getElementById("done-count").textContent = `${done} completed`;
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("error");
+    el.textContent = msg;
+    el.style.display = "block";
+    setTimeout(() => el.style.display = "none", 4000);
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  document.getElementById("new-todo").addEventListener("keydown", e => {
+    if (e.key === "Enter") addTodo();
+  });
+
+  fetchTodos();
+</script>
+</body>
+</html>

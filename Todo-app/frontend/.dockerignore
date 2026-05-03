@@ -1,0 +1,14 @@
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

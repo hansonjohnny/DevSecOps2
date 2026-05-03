@@ -1,0 +1,216 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk'
+        nodejs 'nodejs'
+    }
+
+    environment {
+        SCANNER_HOME = "${tool 'sonar-scanner'}"
+        AWS_ACCOUNT_ID = credentials('ACCOUNT_ID')
+        AWS_ECR_REPO_NAME = credentials('ECR_REPO2')
+        AWS_DEFAULT_REGION = 'us-east-2'
+        REPOSITORY_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/"
+        NVD_KEY = credentials('nvdApiKey')
+    }
+
+    options {
+        timeout(time: 60, unit: "MINUTES")
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: "10"))
+    }
+
+    stages {
+
+        stage("Cleanup Workspace") {
+            steps {
+                cleanWs()
+                echo "Workspace cleaned."
+            }
+        }
+
+        // ─────────────────────────────────────
+        // CHECKOUT FROM GIT
+        // ─────────────────────────────────────
+        stage("Checkout") {
+            steps {
+                echo "Checking out branch: ${env.BRANCH_NAME}"
+                checkout scm
+            }
+        }
+
+        // ─────────────────────────────────────
+        // SONARQUBE ANALYSIS
+        // ─────────────────────────────────────
+        stage('Sonarqube Analysis') {
+            steps {
+                dir('Todo-app/backend') {
+                    withSonarQubeEnv('sonar-server') {
+                        sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=cloud-native-backend -Dsonar.projectName=cloud-native-backend"
+                    }
+                }
+            }
+        }
+
+        stage("Quality Gate") {
+            steps {
+                timeout(time: 10, unit: "MINUTES") {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('OWASP Dependency-Check Scan') {
+            steps {
+                script {
+                    // Ensure report directory exists
+                    sh "mkdir -p ${WORKSPACE}/reports/owasp"
+                }
+
+                dir('Todo-app/backend') {
+                    withCredentials([string(credentialsId: 'nvdApiKey', variable: 'NVD_KEY')]) {
+
+                        dependencyCheck(
+                            odcInstallation: 'DP-Check',
+                            additionalArguments: """
+                                --scan . \
+                                --format XML \
+                                --format HTML \
+                                --prettyPrint \
+                                --nvdApiKey $NVD_KEY \
+                                --disableYarnAudit \
+                                --disableNodeAudit
+                            """
+                        )
+                    }
+                }
+                 // ── debug — show exactly what was generated ──
+                sh "find ${WORKSPACE} -name 'DP-check-report*' 2>/dev/null"
+                sh "ls -la ${WORKSPACE}/reports/owasp/ || echo 'directory empty or missing'"
+
+                // Publish results to Jenkins
+                dependencyCheckPublisher(
+                    pattern: 'Todo-app/backend/dependency-check-report.xml',
+                    failedTotalCritical: 1,
+                    failedTotalHigh: 5
+                )
+            }
+        }
+
+        stage('Trivy File System Scan') {
+            steps {
+                script {
+                    sh "mkdir -p ${WORKSPACE}/reports/trivy"
+                }
+
+                dir('Todo-app/backend') {
+
+                    // Informational scan (does NOT fail build)
+                    sh """
+                        trivy fs \
+                            --severity LOW,MEDIUM \
+                            --format table \
+                            .
+                    """
+
+                    // Enforcement scan (FAILS on serious vulns)
+                    sh """
+                        trivy fs \
+                            --severity HIGH,CRITICAL \
+                            --exit-code 0 \
+                            --format json \
+                            --output ${WORKSPACE}/reports/trivy/fs-scan.json \
+                            .
+                    """
+                }
+            }
+        }
+
+        stage("Docker Image Build") {
+            steps {
+                script {
+                    dir('Todo-app/backend') {
+                        sh 'docker system prune -f'
+                        sh 'docker container prune -f'
+                        sh 'docker build -t ${AWS_ECR_REPO_NAME} .'
+                    }
+                }
+            }
+        }
+
+        stage("Trivy Image Scan") {
+            steps {
+                script {
+                    sh "mkdir -p reports/trivy"
+
+                    // Informational scan (logs only)
+                    sh """
+                        trivy image \
+                            --severity LOW,MEDIUM \
+                            --format table \
+                            ${AWS_ECR_REPO_NAME}
+                    """
+
+                    // Enforcement scan (fails pipeline)
+                    sh """
+                        trivy image \
+                            --severity HIGH,CRITICAL \
+                            --exit-code 0 \
+                            --format json \
+                            --output reports/trivy/image-scan.json \
+                            ${AWS_ECR_REPO_NAME}
+                    """
+                }
+            }
+        }
+
+        stage("ECR Image Pushing") {
+            steps {
+                script {
+                    sh 'aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${REPOSITORY_URI}'
+                    sh 'docker tag ${AWS_ECR_REPO_NAME} ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
+                    sh 'docker push ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}'
+                }
+            }
+        }
+
+        stage("Checkout Code") {
+            steps {
+                echo "Checking out branch: ${env.BRANCH_NAME}"
+                checkout scm
+            }
+        }
+
+        stage('Update Kubernetes Deployment') {
+            environment {
+                GIT_REPO_NAME = "Demo"
+                GIT_USER_NAME = "hansonjohnny"
+            }
+            steps {
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                    dir('K8-Files/Backend') {
+                        sh """
+                            git config user.email "hansonjohnny648@gmail.com"
+                            git config user.name "hansonjohnny"
+
+                            # update image tag in deployment.yaml
+                            sed -i "s|image:.*|image: ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}|g" deployment.yaml
+
+                            git add deployment.yaml
+                            git commit -m "ci: update backend image to build ${BUILD_NUMBER}"
+                            git push https://${GIT_USER_NAME}:\${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+post {
+    always {
+        cleanWs()  // Clean workspace after the pipeline runs
+    }
+}
+}
+

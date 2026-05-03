@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────
+# ENVIRONMENT VARIABLES
+# ─────────────────────────────────────────
+.env
+*.env
+
+# ─────────────────────────────────────────
+# TERRAFORM
+# ─────────────────────────────────────────
+Terraform-Files/terraform.tfvars
+Terraform-Files/.terraform/
+Terraform-Files/.terraform.lock.hcl
+Terraform-Files/*.tfstate
+Terraform-Files/*.tfstate.backup
+
+# bootstrap folder
+Terraform-Files/bootstrap/.terraform/
+Terraform-Files/bootstrap/.terraform.lock.hcl
+Terraform-Files/bootstrap/*.tfstate
+Terraform-Files/bootstrap/*.tfstate.backup
+
+# ─────────────────────────────────────────
+# PYTHON
+# ─────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+
+# ─────────────────────────────────────────
+# DOCKER
+# ─────────────────────────────────────────
+*.log
+
+# ─────────────────────────────────────────
+# OS FILES
+# ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─────────────────────────────────────────
+# SSH KEYS
+# ─────────────────────────────────────────
+*.pem
+*.key
