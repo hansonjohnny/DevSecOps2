@@ -1,0 +1,22 @@
+# ─────────────────────────────────────────
+# CONFIGMAP — APPLICATION CONFIG
+# non-sensitive environment variables only
+# sensitive values live in secrets.yaml
+# ─────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: three-tier
+data:
+  # PostgreSQL
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+
+  # Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+
+  # Backend
+  DATABASE_URL: "postgresql://postgres:postgres@postgres-service:5432/tododb"
+  FLASK_ENV: "production"

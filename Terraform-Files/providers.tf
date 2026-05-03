@@ -14,6 +14,14 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "~> 2.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.0"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9"
+    }
   }
 }
 
@@ -28,5 +36,12 @@ provider "kubernetes" {
     api_version = "client.authentication.k8s.io/v1beta1"
     args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.main.name]
     command     = "aws"
+  }
+}
+
+provider "helm" {
+  kubernetes {
+    config_context = "arn:aws:eks:us-east-2:${data.aws_caller_identity.current.account_id}:cluster/todo-app-cluster"
+    config_path    = "~/.kube/config"
   }
 }

@@ -1,0 +1,15 @@
+# PERSISTENT VOLUME CLAIM — POSTGRESQL
+# requests 5Gi of storage for the database
+# ─────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: three-tier
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp2-csi
+  resources:
+    requests:
+      storage: 5Gi

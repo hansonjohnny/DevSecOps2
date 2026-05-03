@@ -181,29 +181,29 @@ pipeline {
             }
         }
 
-        // stage('Update Kubernetes Deployment') {
-        //     environment {
-        //         GIT_REPO_NAME = "Demo"
-        //         GIT_USER_NAME = "hansonjohnny"
-        //     }
-        //     steps {
-        //         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
-        //             dir('K8-Files/Backend') {
-        //                 sh """
-        //                     git config user.email "hansonjohnny648@gmail.com"
-        //                     git config user.name "hansonjohnny"
+        stage('Update Kubernetes Deployment') {
+            environment {
+                GIT_REPO_NAME = "Demo"
+                GIT_USER_NAME = "hansonjohnny"
+            }
+            steps {
+                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                    dir('K8-Files/Backend') {
+                        sh """
+                            git config user.email "hansonjohnny648@gmail.com"
+                            git config user.name "hansonjohnny"
 
-        //                     # update image tag in deployment.yaml
-        //                     sed -i "s|image:.*|image: ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}|g" deployment.yaml
+                            # update image tag in deployment.yaml
+                            sed -i "s|image:.*|image: ${REPOSITORY_URI}${AWS_ECR_REPO_NAME}:${BUILD_NUMBER}|g" deployment.yaml
 
-        //                     git add deployment.yaml
-        //                     git commit -m "ci: update backend image to build ${BUILD_NUMBER}"
-        //                     git push https://${GIT_USER_NAME}:\${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
-        //                 """
-        //             }
-        //         }
-        //     }
-        // }
+                            git add deployment.yaml
+                            git commit -m "ci: update backend image to build ${BUILD_NUMBER}"
+                            git push https://${GIT_USER_NAME}:\${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+                        """
+                    }
+                }
+            }
+        }
     }
 
 post {

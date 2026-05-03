@@ -1,0 +1,18 @@
+# ─────────────────────────────────────────
+# SERVICE — FRONTEND
+# ClusterIP — ingress controller routes to it
+# ─────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: three-tier
+  labels:
+    app: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - port: 80
+      targetPort: 80
