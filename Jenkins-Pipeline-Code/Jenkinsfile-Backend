@@ -183,7 +183,7 @@ pipeline {
 
         stage('Update Kubernetes Deployment') {
             environment {
-                GIT_REPO_NAME = "Demo"
+                GIT_REPO_NAME = "DevSecOps2"
                 GIT_USER_NAME = "hansonjohnny"
             }
             steps {
