@@ -1,41 +1,41 @@
-# # ─────────────────────────────────────────
-# # SECURITY GROUP — ALB
-# # accepts traffic from the internet
-# # ─────────────────────────────────────────
-# resource "aws_security_group" "alb" {
-#   name        = "${var.project_name}-alb-sg"
-#   description = "Security group for Application Load Balancer"
-#   vpc_id      = aws_vpc.main.id
+# ─────────────────────────────────────────
+# SECURITY GROUP — ALB
+# accepts traffic from the internet
+# ─────────────────────────────────────────
+resource "aws_security_group" "alb" {
+  name        = "${var.project_name}-alb-sg"
+  description = "Security group for Application Load Balancer"
+  vpc_id      = aws_vpc.main.id
 
-#   ingress {
-#     from_port   = 80
-#     to_port     = 80
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#     description = "Allow HTTP from internet"
-#   }
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP from internet"
+  }
 
-#   ingress {
-#     from_port   = 443
-#     to_port     = 443
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#     description = "Allow HTTPS from internet"
-#   }
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTPS from internet"
+  }
 
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#     description = "Allow all outbound"
-#   }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound"
+  }
 
-#   tags = {
-#     Name        = "${var.project_name}-alb-sg"
-#     Environment = var.environment
-#   }
-# }
+  tags = {
+    Name        = "${var.project_name}-alb-sg"
+    Environment = var.environment
+  }
+}
 
 
 # ─────────────────────────────────────────
