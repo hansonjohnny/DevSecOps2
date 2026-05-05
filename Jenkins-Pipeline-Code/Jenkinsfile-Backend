@@ -65,34 +65,30 @@ pipeline {
         // ─────────────────────────────────────
         stage('OWASP Dependency-Check Scan') {
             options {
-                timeout(time: 60, unit: 'MINUTES')   // OWASP gets its own 60 mins
+                timeout(time: 60, unit: 'MINUTES')
             }
             steps {
                 script {
                     sh "mkdir -p ${WORKSPACE}/reports/owasp"
-                    sh "mkdir -p /var/lib/jenkins/.dependency-check-data"  // persistent cache across builds
+                    sh "mkdir -p /var/lib/jenkins/.dependency-check-data"
                 }
 
                 dir('Todo-app/backend') {
-                    // NVD_KEY already in environment block — just expose it safely
-                    withEnv(["NVD_API_KEY=${NVD_KEY}"]) {
-                        dependencyCheck(
-                            odcInstallation: 'DP-Check',
-                            additionalArguments: '''
-                                --scan . \
-                                --out ''' + "${WORKSPACE}/reports/owasp" + ''' \
-                                --format XML \
-                                --format HTML \
-                                --prettyPrint \
-                                --nvdApiKey $NVD_API_KEY \
-                                --data /var/lib/jenkins/.dependency-check-data \
-                                --enableExperimental
-                            '''
-                        )
-                    }
+                    dependencyCheck(
+                        odcInstallation: 'DP-Check',
+                        additionalArguments: '''
+                            --scan . \
+                            --out ''' + "${WORKSPACE}/reports/owasp" + ''' \
+                            --format XML \
+                            --format HTML \
+                            --prettyPrint \
+                            --nvdApiKey ''' + '$NVD_KEY' + ''' \
+                            --data /var/lib/jenkins/.dependency-check-data \
+                            --enableExperimental
+                        '''
+                    )
                 }
 
-                // Confirm reports were generated
                 sh "find ${WORKSPACE}/reports/owasp -type f 2>/dev/null || echo 'No reports found'"
 
                 dependencyCheckPublisher(
