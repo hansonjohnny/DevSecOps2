@@ -15,7 +15,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 60, unit: "MINUTES")
+        timeout(time: 120, unit: "MINUTES")   // increased to cover first OWASP run
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: "10"))
     }
@@ -44,7 +44,7 @@ pipeline {
         // ─────────────────────────────────────
         stage('Sonarqube Analysis') {
             steps {
-                dir('Todo-app/frontend') {
+                dir('Todo-app/Frontend') {
                     withSonarQubeEnv('sonar-server') {
                         sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=cloud-native-frontend -Dsonar.projectName=cloud-native-frontend"
                     }
@@ -60,50 +60,55 @@ pipeline {
             }
         }
 
+        // ─────────────────────────────────────
+        // OWASP DEPENDENCY CHECK
+        // ─────────────────────────────────────
         stage('OWASP Dependency-Check Scan') {
+            options {
+                timeout(time: 60, unit: 'MINUTES')
+            }
             steps {
                 script {
-                    // Ensure report directory exists
                     sh "mkdir -p ${WORKSPACE}/reports/owasp"
+                    sh "mkdir -p /var/lib/jenkins/.dependency-check-data"
                 }
 
-                dir('Todo-app/frontend') {
-                    withCredentials([string(credentialsId: 'nvdApiKey', variable: 'NVD_KEY')]) {
-
-                        dependencyCheck(
-                            odcInstallation: 'DP-Check',
-                            additionalArguments: """
-                                --scan . \
-                                --format XML \
-                                --format HTML \
-                                --prettyPrint \
-                                --nvdApiKey $NVD_KEY \
-                                --disableYarnAudit \
-                                --disableNodeAudit
-                            """
-                        )
-                    }
+                dir('Todo-app/Frontend') {
+                    dependencyCheck(
+                        odcInstallation: 'DP-Check',
+                        additionalArguments: '''
+                            --scan . \
+                            --out ''' + "${WORKSPACE}/reports/owasp" + ''' \
+                            --format XML \
+                            --format HTML \
+                            --prettyPrint \
+                            --nvdApiKey ''' + '$NVD_KEY' + ''' \
+                            --data /var/lib/jenkins/.dependency-check-data \
+                            --enableExperimental
+                        '''
+                    )
                 }
-                 // ── debug — show exactly what was generated ──
-                sh "find ${WORKSPACE} -name 'DP-check-report*' 2>/dev/null"
-                sh "ls -la ${WORKSPACE}/reports/owasp/ || echo 'directory empty or missing'"
 
-                // Publish results to Jenkins
+                sh "find ${WORKSPACE}/reports/owasp -type f 2>/dev/null || echo 'No reports found'"
+
                 dependencyCheckPublisher(
-                    pattern: 'Todo-app/frontend/dependency-check-report.xml',
+                    pattern: 'reports/owasp/dependency-check-report.xml',
                     failedTotalCritical: 1,
                     failedTotalHigh: 5
                 )
             }
         }
 
+        // ─────────────────────────────────────
+        // TRIVY FILE SYSTEM SCAN
+        // ─────────────────────────────────────
         stage('Trivy File System Scan') {
             steps {
                 script {
                     sh "mkdir -p ${WORKSPACE}/reports/trivy"
                 }
 
-                dir('Todo-app/frontend') {
+                dir('Todo-app/Frontend') {
 
                     // Informational scan (does NOT fail build)
                     sh """
@@ -126,10 +131,13 @@ pipeline {
             }
         }
 
+        // ─────────────────────────────────────
+        // DOCKER BUILD
+        // ─────────────────────────────────────
         stage("Docker Image Build") {
             steps {
                 script {
-                    dir('Todo-app/frontend') {
+                    dir('Todo-app/Frontend') {
                         sh 'docker system prune -f'
                         sh 'docker container prune -f'
                         sh 'docker build -t ${AWS_ECR_REPO_NAME} .'
@@ -138,6 +146,9 @@ pipeline {
             }
         }
 
+        // ─────────────────────────────────────
+        // TRIVY IMAGE SCAN
+        // ─────────────────────────────────────
         stage("Trivy Image Scan") {
             steps {
                 script {
@@ -151,7 +162,7 @@ pipeline {
                             ${AWS_ECR_REPO_NAME}
                     """
 
-                    // Enforcement scan (fails pipeline)
+                    // Enforcement scan
                     sh """
                         trivy image \
                             --severity HIGH,CRITICAL \
@@ -164,6 +175,9 @@ pipeline {
             }
         }
 
+        // ─────────────────────────────────────
+        // PUSH TO ECR
+        // ─────────────────────────────────────
         stage("ECR Image Pushing") {
             steps {
                 script {
@@ -174,13 +188,9 @@ pipeline {
             }
         }
 
-        stage("Checkout Code") {
-            steps {
-                echo "Checking out branch: ${env.BRANCH_NAME}"
-                checkout scm
-            }
-        }
-
+        // ─────────────────────────────────────
+        // UPDATE KUBERNETES DEPLOYMENT
+        // ─────────────────────────────────────
         stage('Update Kubernetes Deployment') {
             environment {
                 GIT_REPO_NAME = "DevSecOps2"
@@ -206,10 +216,9 @@ pipeline {
         }
     }
 
-post {
-    always {
-        cleanWs()  // Clean workspace after the pipeline runs
+    post {
+        always {
+            cleanWs()
+        }
     }
 }
-}
-
