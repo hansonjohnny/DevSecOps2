@@ -39,9 +39,15 @@ provider "kubernetes" {
   }
 }
 
+# ← fixed: uses same auth as kubernetes provider, not local kubeconfig
 provider "helm" {
   kubernetes {
-    config_context = "arn:aws:eks:us-east-2:${data.aws_caller_identity.current.account_id}:cluster/todo-app-cluster"
-    config_path    = "~/.kube/config"
+    host                   = aws_eks_cluster.main.endpoint
+    cluster_ca_certificate = base64decode(aws_eks_cluster.main.certificate_authority[0].data)
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.main.name]
+      command     = "aws"
+    }
   }
 }
