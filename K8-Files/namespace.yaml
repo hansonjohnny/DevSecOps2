@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: three-tier
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"   # negative = apply first
-  labels:
-    name: three-tier
-    environment: dev

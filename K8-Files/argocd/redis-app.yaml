@@ -1,21 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: todo-frontend
+  name: todo-redis
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2" 
 spec:
   project: default
 
   source:
     repoURL: https://github.com/hansonjohnny/DevSecOps2.git
     targetRevision: main
-    path: K8-Files/Frontend         # ← where your frontend manifests are
+    path: K8-Files/Redis
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: three-tier             # ← namespace to deploy into
+    namespace: todo-app
 
   syncPolicy:
     automated:
