@@ -44,7 +44,7 @@ pipeline {
         // ─────────────────────────────────────
         stage('Sonarqube Analysis') {
             steps {
-                dir('Todo-app/Frontend') {
+                dir('Todo-app/frontend') {
                     withSonarQubeEnv('sonar-server') {
                         sh "${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=cloud-native-frontend -Dsonar.projectName=cloud-native-frontend"
                     }
