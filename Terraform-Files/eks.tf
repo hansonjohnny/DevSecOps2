@@ -63,25 +63,19 @@ resource "aws_eks_node_group" "main" {
   }
 }
 
-# ─────────────────────────────────────────
-# KUBERNETES NAMESPACE
-# ─────────────────────────────────────────
-resource "kubernetes_namespace" "todo_app" {
+resource "kubernetes_namespace" "three_tier" {
   metadata {
-    name = "todo-app"
-
+    name = "three-tier"
     labels = {
       environment = var.environment
       managed-by  = "terraform"
     }
   }
-
   depends_on = [
     aws_eks_cluster.main,
-    aws_eks_node_group.main    # ← wait for nodes too, not just the cluster
+    aws_eks_node_group.main
   ]
 }
-
 
 # ─────────────────────────────────────────
 # DATA SOURCE — OIDC TLS CERTIFICATE
