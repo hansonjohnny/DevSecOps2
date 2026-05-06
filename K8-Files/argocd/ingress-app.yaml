@@ -15,7 +15,7 @@ spec:
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: todo-app
+    namespace: three-tier             # ← namespace to deploy into
 
   syncPolicy:
     automated:

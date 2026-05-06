@@ -34,7 +34,7 @@ resource "aws_security_group" "alb" {
   tags = {
     Name                                                = "${var.project_name}-alb-sg"
     Environment                                         = var.environment
-    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"   # ← add this
+    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared" # ← add this
   }
 }
 
