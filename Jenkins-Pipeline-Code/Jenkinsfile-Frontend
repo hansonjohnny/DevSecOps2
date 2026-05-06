@@ -188,6 +188,13 @@ pipeline {
             }
         }
 
+        stage("Checkout code") {
+            steps {
+                echo "Checking out branch: ${env.BRANCH_NAME}"
+                checkout scm
+            }
+        }
+
         // ─────────────────────────────────────
         // UPDATE KUBERNETES DEPLOYMENT
         // ─────────────────────────────────────
