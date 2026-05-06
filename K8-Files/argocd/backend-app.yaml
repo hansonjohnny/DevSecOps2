@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: todo-backend
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/hansonjohnny/DevSecOps2.git
+    targetRevision: main
+    path: K8-Files/Backend          # ← where your backend manifests are
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: three-tier             # ← namespace to deploy into
+
+  syncPolicy:
+    automated:
+      prune: true                   # delete removed resources
+      selfHeal: true                # fix manual changes automatically
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: todo-frontend
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/hansonjohnny/DevSecOps2.git
+    targetRevision: main
+    path: K8-Files/Frontend         # ← where your frontend manifests are
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: three-tier             # ← namespace to deploy into
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
