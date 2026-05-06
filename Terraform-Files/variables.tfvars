@@ -26,4 +26,4 @@ jenkins_instance_type = "m7i-flex.large"
 # restrict SSH to your own IP for security
 # find your IP at: https://checkip.amazonaws.com
 # format: x.x.x.x/32
-jenkins_ssh_cidr = "154.161.177.101/32"
+jenkins_ssh_cidr = "102.223.20.182/32"
