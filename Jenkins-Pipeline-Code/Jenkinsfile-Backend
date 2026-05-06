@@ -64,9 +64,6 @@ pipeline {
         // OWASP DEPENDENCY CHECK
         // ─────────────────────────────────────
         stage('OWASP Dependency-Check Scan') {
-            options {
-                timeout(time: 60, unit: 'MINUTES')
-            }
             steps {
                 script {
                     sh "mkdir -p ${WORKSPACE}/reports/owasp"
