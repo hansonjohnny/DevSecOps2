@@ -34,7 +34,7 @@ resource "aws_security_group" "alb" {
   tags = {
     Name                                                = "${var.project_name}-alb-sg"
     Environment                                         = var.environment
-    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared" # ← add this
+    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"
   }
 }
 
@@ -153,6 +153,10 @@ resource "aws_security_group" "eks_nodes" {
   }
 }
 
+
+# ─────────────────────────────────────────
+# SECURITY GROUP — JENKINS EC2
+# ─────────────────────────────────────────
 resource "aws_security_group" "jenkins" {
   name        = "${var.project_name}-jenkins-sg"
   description = "Security group for Jenkins EC2 server"
@@ -163,23 +167,23 @@ resource "aws_security_group" "jenkins" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = [var.jenkins_ssh_cidr]
-    description = "SSH access"
+    description = "SSH access - my IP only"
   }
 
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Jenkins web UI"
+    cidr_blocks = [var.jenkins_ssh_cidr]    # ← reuse same IP variable
+    description = "Jenkins UI - my IP only"
   }
 
   ingress {
     from_port   = 9000
     to_port     = 9000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "SonarQube web UI"
+    cidr_blocks = [var.jenkins_ssh_cidr]    # ← reuse same IP variable
+    description = "SonarQube UI - my IP only"
   }
 
   egress {
