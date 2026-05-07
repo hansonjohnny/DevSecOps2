@@ -30,6 +30,37 @@ resource "aws_eks_cluster" "main" {
 
 
 # ─────────────────────────────────────────
+# LAUNCH TEMPLATE — EKS NODES
+# increases max pods per node from 11 to 50
+# t3.medium default is limited by ENI IPs
+# ─────────────────────────────────────────
+resource "aws_launch_template" "eks_nodes" {
+  name = "${var.project_name}-eks-node-template"
+
+  user_data = base64encode(<<-EOF
+    MIME-Version: 1.0
+    Content-Type: multipart/mixed; boundary="==BOUNDARY=="
+
+    --==BOUNDARY==
+    Content-Type: text/x-shellscript; charset="us-ascii"
+
+    #!/bin/bash
+    /etc/eks/bootstrap.sh ${var.project_name}-cluster \
+      --use-max-pods false \
+      --kubelet-extra-args '--max-pods=50'
+
+    --==BOUNDARY==--
+  EOF
+  )
+
+  tags = {
+    Name        = "${var.project_name}-eks-node-template"
+    Environment = var.environment
+  }
+}
+
+
+# ─────────────────────────────────────────
 # EKS NODE GROUP
 # ─────────────────────────────────────────
 resource "aws_eks_node_group" "main" {
@@ -44,11 +75,16 @@ resource "aws_eks_node_group" "main" {
   scaling_config {
     desired_size = 2
     min_size     = 1
-    max_size     = 2
+    max_size     = 3
   }
 
   update_config {
     max_unavailable = 1
+  }
+
+  launch_template {
+    name    = aws_launch_template.eks_nodes.name
+    version = aws_launch_template.eks_nodes.latest_version
   }
 
   depends_on = [
@@ -63,6 +99,12 @@ resource "aws_eks_node_group" "main" {
   }
 }
 
+
+# ─────────────────────────────────────────
+# KUBERNETES NAMESPACE — THREE TIER
+# created by Terraform so it exists before
+# ArgoCD tries to deploy into it
+# ─────────────────────────────────────────
 resource "kubernetes_namespace" "three_tier" {
   metadata {
     name = "three-tier"
@@ -71,11 +113,13 @@ resource "kubernetes_namespace" "three_tier" {
       managed-by  = "terraform"
     }
   }
+
   depends_on = [
     aws_eks_cluster.main,
     aws_eks_node_group.main
   ]
 }
+
 
 # ─────────────────────────────────────────
 # DATA SOURCE — OIDC TLS CERTIFICATE
@@ -84,4 +128,24 @@ resource "kubernetes_namespace" "three_tier" {
 # ─────────────────────────────────────────
 data "tls_certificate" "eks" {
   url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+
+# ─────────────────────────────────────────
+# EBS CSI DRIVER ADDON
+# required for PVC provisioning
+# ─────────────────────────────────────────
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name             = aws_eks_cluster.main.name
+  addon_name               = "aws-ebs-csi-driver"
+  service_account_role_arn = aws_iam_role.ebs_csi.arn
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = {
+    Name        = "${var.project_name}-ebs-csi-addon"
+    Environment = var.environment
+  }
 }
