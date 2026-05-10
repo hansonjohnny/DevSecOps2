@@ -19,6 +19,7 @@ todo-app/
 ├── frontend/
 │   ├── index.html          # UI
 │   └── Dockerfile
+│   └──nginx.conf
 └── docker-compose.yml      # Local dev only
 ```
 
