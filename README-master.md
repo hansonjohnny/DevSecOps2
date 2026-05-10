@@ -67,6 +67,7 @@ The application itself is intentionally simple — the real purpose of this proj
 ```
 DevSecOps2/
 │
+├── Terraform-Files/
 ├── bootstrap/                    # Phase 1 — run FIRST, run ONCE
 │   ├── provider.tf
 │   ├── variables.tf
@@ -106,7 +107,7 @@ DevSecOps2/
 │   │   └── Dockerfile
 │   └── docker-compose.yml        # Local dev only
 │
-├── Jenkinsfiles/                 # Phase 3 — CI/CD pipeline definitions
+├── Jenkins-Pipeline-Code/                 # Phase 3 — CI/CD pipeline definitions
 │   ├── Jenkinsfile-backend
 │   └── Jenkinsfile-frontend
 │
