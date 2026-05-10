@@ -41,7 +41,7 @@ resource "aws_subnet" "public" {
     Name                                                = "${var.project_name}-public-subnet-${count.index + 1}"
     Environment                                         = var.environment
     "kubernetes.io/role/elb"                            = "1"
-    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared" # ← add this
+    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"
   }
 }
 
@@ -60,7 +60,7 @@ resource "aws_subnet" "private" {
     Name                                                = "${var.project_name}-private-subnet-${count.index + 1}"
     Environment                                         = var.environment
     "kubernetes.io/role/internal-elb"                   = "1"
-    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared" # ← add this
+    "kubernetes.io/cluster/${var.project_name}-cluster" = "shared"
   }
 }
 

@@ -74,33 +74,33 @@ resource "aws_acm_certificate_validation" "main" {
 # ─────────────────────────────────────────
 # ROUTE 53 RECORD — root domain
 # ─────────────────────────────────────────
-# resource "aws_route53_record" "root" {
-#   zone_id = aws_route53_zone.main.zone_id
-#   name    = "johnnycloudops.xyz"
-#   type    = "A"
+resource "aws_route53_record" "root" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "johnnycloudops.xyz"
+  type    = "A"
 
-#   alias {
-#     name                   = data.aws_lb.app.dns_name
-#     zone_id                = data.aws_lb.app.zone_id
-#     evaluate_target_health = true
-#   }
-# }
+  alias {
+    name                   = data.aws_lb.app.dns_name
+    zone_id                = data.aws_lb.app.zone_id
+    evaluate_target_health = true
+  }
+}
 
 
 # ─────────────────────────────────────────
 # ROUTE 53 RECORD — www subdomain
 # ─────────────────────────────────────────
-# resource "aws_route53_record" "www" {
-#   zone_id = aws_route53_zone.main.zone_id
-#   name    = "www.johnnycloudops.xyz"
-#   type    = "A"
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "www.johnnycloudops.xyz"
+  type    = "A"
 
-#   alias {
-#     name                   = data.aws_lb.app.dns_name
-#     zone_id                = data.aws_lb.app.zone_id
-#     evaluate_target_health = true
-#   }
-# }
+  alias {
+    name                   = data.aws_lb.app.dns_name
+    zone_id                = data.aws_lb.app.zone_id
+    evaluate_target_health = true
+  }
+}
 
 
 # ─────────────────────────────────────────

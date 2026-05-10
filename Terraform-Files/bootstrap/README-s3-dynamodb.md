@@ -46,6 +46,7 @@ Terraform state tracks every resource it manages. By default, state is stored lo
 
 ```
 .
+├── bootstrap/
 ├── provider.tf       # Terraform + AWS provider version constraints
 ├── variables.tf      # Configurable inputs (region, bucket name, table name)
 ├── s3.tf             # S3 bucket + versioning + encryption + public access block
