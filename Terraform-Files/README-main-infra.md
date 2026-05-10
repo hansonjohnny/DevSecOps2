@@ -189,7 +189,7 @@ data "aws_key_pair" "jenkins-key" {
   key_name = "jenkins-key"
 }
 ```
-The key pair must be created manually in the AWS console before applying. Terraform references it by name; the private key file (`.pem`) is kept locally for SSH access to Jenkins.
+The key pair must be created manually in the AWS console before applying. Terraform references it by name; the private key file (`.pem`) is kept locally for SSH access to Jenkins-server.
 
 ---
 

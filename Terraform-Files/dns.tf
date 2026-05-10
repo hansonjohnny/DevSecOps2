@@ -14,13 +14,13 @@ resource "aws_route53_zone" "main" {
 # ─────────────────────────────────────────
 # DATA SOURCE — ALB from Ingress
 # ─────────────────────────────────────────
-# data "aws_lb" "app" {
-#   tags = {
-#     "elbv2.k8s.aws/cluster"    = "${var.project_name}-cluster"
-#     "ingress.k8s.aws/resource" = "LoadBalancer"
-#     "ingress.k8s.aws/stack"    = "three-tier/todo-app-ingress"
-#   }
-# }
+data "aws_lb" "app" {
+  tags = {
+    "elbv2.k8s.aws/cluster"    = "${var.project_name}-cluster"
+    "ingress.k8s.aws/resource" = "LoadBalancer"
+    "ingress.k8s.aws/stack"    = "three-tier/todo-app-ingress"
+  }
+}
 
 
 # ─────────────────────────────────────────
